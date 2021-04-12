@@ -7,10 +7,12 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+/logs
 .Python
 build/
 develop-eggs/
 dist/
+datasets/
 downloads/
 eggs/
 .eggs/

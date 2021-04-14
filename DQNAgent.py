@@ -14,11 +14,11 @@ from tqdm import tqdm
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 # Minimum number of steps in a memory to start training
-MIN_REPLAY_MEMORY_SIZE = 200
-MINIBATCH_SIZE = 200  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
-MODEL_NAME = 'RLTCP'
-MIN_REWARD = -200  # For model save
+MIN_REPLAY_MEMORY_SIZE =5000 
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 1000  # Terminal states (end of steps)
+MODEL_NAME = 'AGCRL'
+MIN_REWARD = -5000  # For model save
 MEMORY_FRACTION = 0.20
 
 
@@ -93,11 +93,10 @@ class DQNAgent:
     def create_model(self):
         model = Sequential()
 
-        # OBSERVATION_SPACE_VALUES = (10, 10, 3) a 10x10 RGB image.
-        model.add(Dense(16, input_shape=self.env.observation_space.shape))
-        model.add(Dense(32))
-        model.add(Dense(16))
-        # ACTION_SPACE_SIZE = how many choices (10)
+        model.add(Dense(64, input_shape=self.env.observation_space))
+        model.add(Dense(128))
+        model.add(Dense(64))
+        # ACTION_SPACE_SIZE = how many choices (20)
         model.add(Dense(len(self.action_space), activation='linear'))
         model.compile(loss="mse", optimizer=Adam(
             lr=0.001), metrics=['accuracy'])
@@ -155,9 +154,7 @@ class DQNAgent:
         self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0,
                        shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
 
-        # Update target network counter every episode
-        if terminal_state:
-            self.target_update_counter += 1
+        self.target_update_counter += 1
 
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
@@ -166,4 +163,4 @@ class DQNAgent:
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
-        return self.model.predict(np.array(state).reshape(1, self.env.observation_space.shape[0]))[0]
+        return self.model.predict(np.array(state).reshape(1, self.env.observation_space[0]))[0]

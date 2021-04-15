@@ -16,7 +16,7 @@ class AGCRLEnv:
         self.interval=action_space[1]-action_space[0]
         
     def estimate_closest_as(self,value):
-        return self.action_space[int(value)//int(self.interval)]
+        return self.action_space[int(value/self.interval)]
     
     def step(self,action):
         """
@@ -40,10 +40,10 @@ class AGCRLEnv:
         """
 #         print(self.action_space[action])
 #         print(self.actions[self.teamindex]["assim_sp"][self.index])
-        if(self.action_space[action]==self.estimate_closest_as(self.actions[self.teamindex]["assim_sp"][self.index])):
+        if(self.action_space[action]==self.estimate_closest_as(self.actions[self.teamindex][self.action_parameter][self.index])):
             return 100
         else:
-            return -1*abs(self.action_space[action]-self.actions[self.teamindex]["assim_sp"][self.index])
+            return -1*abs(self.action_space[action]-self.actions[self.teamindex][self.action_parameter][self.index])
     
     def reset(self):
         """

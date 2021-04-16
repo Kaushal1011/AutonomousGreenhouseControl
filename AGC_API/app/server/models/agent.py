@@ -15,6 +15,20 @@ class environment_endpoint(BaseModel):
         }
 
 
+class teamnindex_endpoint(BaseModel):
+    team: int = Field(...)
+    index: int = Field(...)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "team": 0,
+                "index": 10,
+
+            }
+        }
+
+
 class agent_endpoint(BaseModel):
     time: float = Field(...)
     AssimLight: float = Field(...)

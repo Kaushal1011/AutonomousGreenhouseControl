@@ -20,8 +20,10 @@ with open("./server/actions.pickle", "rb") as handle:
 
 assim_rl_actionspace = np.linspace(0, 100, 21)
 env_assim = AGCRLEnv(obs, actions, "assim_sp", assim_rl_actionspace)
+env_assim_random = AGCRLEnv(obs, actions, "assim_sp", assim_rl_actionspace)
 
-assim_model = tensorflow.keras.models.load_model("./server/tfmodels/assim.model")
+assim_model = tensorflow.keras.models.load_model(
+    "./server/tfmodels/assim.model")
 
 
 @app.post("/predict")
@@ -45,16 +47,33 @@ def assim_env(body: environment_endpoint):
 @app.get("/reset")
 def reset_assim_env():
     obs = list(env_assim.resetinit())
+    env_assim_random.resetinit()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 
 @app.get("/reset_team")
 def reset_assim_env_team():
     obs = list(env_assim.reset())
+    env_assim_random.resetinit()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 
 @app.post("/teamnindex")
 def set_teamnindex(body: teamnindex_endpoint):
-    data = {}
+    env_assim.index = body.index
+    env_assim.teamindex = body.team
+    return ResponseModel(data=body, message="team and index set")
+
+
+@app.get("/randomstep")
+def randomstep():
+    # return random action orignal action & random action
+    randomaction = np.random.randint(0, len(env_assim.action_space))
+    action = env_assim_random.actions[env_assim.teamindex][env_assim.action_parameter][env_assim.index]
+    obs, reward, done = env_assim.step(randomaction)
+    data = {
+        "randomaction": float(randomaction),
+        "action": float(action),
+        "randomreward": float(reward)
+    }
     return ResponseModel(data=data, message="team and index set")

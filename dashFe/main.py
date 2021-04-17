@@ -3,6 +3,7 @@ from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.subplots import make_subplots
 import numpy as np
 import pandas as pd
 import dash_html_components as html
@@ -24,10 +25,10 @@ sim_index = 0
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 
-colors = {
-    'background': '#111111',
-    'text': '#7FDBFF'
-}
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+]
 
 app = dash.Dash(
     __name__,
@@ -40,29 +41,8 @@ app.layout = html.Div(
         html.Button("Start Simulation", id="start", n_clicks=0),
         html.Button("Stop Simulation", id="stop", n_clicks=0),
         html.Button("Reset Simulation", id="reset", n_clicks=0),
-        html.Button("Set", id="set", n_clicks=0),
         dcc.Interval(
-            id="interval-component", interval=1000, n_intervals=0  # in milliseconds
-        ),
-        dcc.Dropdown(
-            id='Action-index',
-            options=[{'label': i, 'value': i} for i in Action],
-            placeholder="Action",
-
-
-        ),
-        dcc.Dropdown(
-            id='Team-index',
-            options=[{'label': i, 'value': i} for i in available_Team],
-            placeholder="Team",
-
-        ),
-        dcc.Dropdown(
-            id='sim-index',
-            options=[{'label': i, 'value': i} for i in available_sim],
-            placeholder="sim",
-
-
+            id="interval-component", interval=2000, n_intervals=0  # in milliseconds
         ),
         dcc.Graph(id="live-update-graph"),
     ]
@@ -111,30 +91,35 @@ def update_graph(reset, n):
     ctx = dash.callback_context
     if ctx.triggered[0]["prop_id"].split(".")[0] == "reset":
         return reset_graph()
+    for i in range(5):
+        payload = json.dumps({"action": state.actions_assim[-1]})
+        # print(payload)
+        r = requests.post(
+            "http://0.0.0.0:8000/light/environment", data=payload)
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        data = r.json()["data"][0]
+        obs = data["obs"]
+        reward = data["reward"]
+        obs_series = pd.Series(obs, index=state.params)
+        state.obs.append(obs_series, ignore_index=True)
+        # print(obs)
+        # print(reward)
 
-    state.actions_assim.append(n)
-    payload = json.dumps({"action": state.actions_assim[-1]})
-    # print(payload)
-    r = requests.post("http://0.0.0.0:8000/light/environment", data=payload)
-    if r.status_code != 200:
-        raise Exception("status response is not 200")
-    data = r.json()["data"][0]
-    obs = data["obs"]
-    reward = data["reward"]
-
-    # print(obs)
-    # print(reward)
-
-    state.rewards_assim.append(reward)
-    # call api to make predictions
-    payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
-    r = requests.post("http://0.0.0.0:8000/light/predict", data=payload)
-    if r.status_code != 200:
-        raise Exception("status response is not 200")
-    state.actions_assim.append(r.json()["data"][0])
+        state.rewards_assim.append(reward + state.rewards_assim[-1])
+        # call api to make predictions
+        payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
+        r = requests.post("http://0.0.0.0:8000/light/predict", data=payload)
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        state.actions_assim.append(r.json()["data"][0])
     # print(state.actions_assim)
     # print(state.rewards_assim)
-    fig = px.line(y=state.actions_assim)
+    fig = make_subplots(rows=2, cols=2)
+    fig.add_trace(go.Scatter(y=state.actions_assim), row=1, col=1)
+    fig.add_trace(go.Scatter(y=state.rewards_assim), row=1, col=2)
+    fig.add_trace(go.Scatter(y=state.obs), row=2, col=1)
+
     return fig
 
 

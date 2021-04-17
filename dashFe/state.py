@@ -1,3 +1,5 @@
+import pandas as pd
+
 actions_assim = [0]
 rewards_assim = []
 randomactions_assim = [0]
@@ -54,3 +56,5 @@ params = [
     "stem_dens",
     "plant_dens",
 ]
+
+obs = pd.DataFrame(columns=params)

@@ -17,12 +17,17 @@ import json
 # prediction = assim_model.predict([obs])
 # action = np.argmax(prediction[0])
 # actions_assim.append(action)
+Action = ['Light' , 'Water' , 'Hit']
+available_Team = [1,2,3,4,5]
+available_sim = [1,2,3,4,5]
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 
-external_stylesheets = [
-    dbc.themes.BOOTSTRAP,
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-]
+colors = {
+    'background': '#111111',
+    'text': '#7FDBFF'
+}
 
 app = dash.Dash(
     __name__,
@@ -35,13 +40,33 @@ app.layout = html.Div(
         html.Button("Start Simulation", id="start", n_clicks=0),
         html.Button("Stop Simulation", id="stop", n_clicks=0),
         html.Button("Reset Simulation", id="reset", n_clicks=0),
+        html.Button("Set", id="set", n_clicks=0),
         dcc.Interval(
             id="interval-component", interval=1000, n_intervals=0  # in milliseconds
+        ),
+        dcc.Dropdown(
+            id='Action-index',
+            options=[{'label': i, 'value': i} for i in Action],
+            placeholder="Action",
+
+
+        ),
+        dcc.Dropdown(
+                id='Team-index',
+                options=[{'label': i, 'value': i} for i in available_Team],
+                placeholder="Team",
+
+        ),
+        dcc.Dropdown(
+                id='sim-index',
+                options=[{'label': i, 'value': i} for i in available_sim],
+                placeholder="sim",
+
+
         ),
         dcc.Graph(id="live-update-graph"),
     ]
 )
-
 
 @app.callback(
     dash.dependencies.Output("interval-component", "disabled"),

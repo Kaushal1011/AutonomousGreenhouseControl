@@ -56,8 +56,10 @@ external_stylesheets = [
 ]
 
 colors = {
-    'background': '#228B22',
-    'text': '#00008B'
+    'background1': '#228B22',
+    'background2': '#00008B',
+    'text1': '#00008B',
+    'text2': '#228B22'
 }
 
 app = dash.Dash(
@@ -66,29 +68,30 @@ app = dash.Dash(
     meta_tags=[{"name": "viewport", "content": "width=device-width"}],
 )
 
-app.layout = html.Div(style={'backgroundColor': colors ['background']}, children=[
+app.layout = html.Div(children=[
 
     html.Button("Start Simulation", id="start", n_clicks=0, style={
         'textAlign': 'center',
-        'color': colors['text'],
+        'color': colors ['text1'],
         'height': 40,
         'width': 250,
+        'backgroundColor': colors ['background2']
     }),
     html.Button("Stop Simulation", id="stop", n_clicks=0, style={
         'textAlign': 'center',
-        'color': colors['text'],
+        'color': colors ['text1'],
         'height': 40,
         'width': 250,
     }),
     html.Button("Reset Simulation", id="reset", n_clicks=0, style={
         'textAlign': 'center',
-        'color': colors['text'],
+        'color': colors ['text1'],
         'height': 40,
         'width': 250,
     }),
     html.Button("Set", id="set", n_clicks=0, style={
         'textAlign': 'center',
-        'color': colors['text'],
+        'color': colors ['text1'],
         'height': 40,
         'width': 250,
     }),
@@ -96,18 +99,18 @@ app.layout = html.Div(style={'backgroundColor': colors ['background']}, children
         id="interval-component", interval=1000, n_intervals=0  # in milliseconds
     ),
 
-    dcc.Dropdown(
-        id='Action-index',
-        options=[{'label': i, 'value': i} for i in Action],
-        placeholder="Action",
-        style={
-            'textAlign': 'center',
-            'color': colors['text'],
-            'height': 40,
-            'width': 400,
-        }
+    dcc.Dropdown({'backgroundColor': colors['background2']},
+                 id='Action-index',
+                 options=[{'label': i, 'value': i} for i in Action],
+                 placeholder="Action",
+                 style={
+                     'textAlign': 'center',
+                     'color': colors ['text2'],
+                     'height': 40,
+                     'width': 400,
+                 }
 
-    ),
+                 ),
 
     dcc.Dropdown(
         id='Team-index',
@@ -115,7 +118,7 @@ app.layout = html.Div(style={'backgroundColor': colors ['background']}, children
         placeholder="Team",
         style={
             'textAlign': 'center',
-            'color': colors['text'],
+            'color': colors ['text'],
             'height': 40,
             'width': 400,
         }
@@ -127,7 +130,7 @@ app.layout = html.Div(style={'backgroundColor': colors ['background']}, children
         placeholder="sim",
         style={
             'textAlign': 'center',
-            'color': colors['text'],
+            'color': colors ['text'],
             'height': 40,
             'width': 400,
         }

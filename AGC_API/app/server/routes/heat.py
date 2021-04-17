@@ -16,6 +16,9 @@ with open('./server/actions.pickle', 'rb') as handle:
 theat_rl_actionspace = np.linspace(0, 25, 26)
 env_heat = AGCRLEnv(obs, actions, "t_heat_sp", theat_rl_actionspace)
 
+env_heat_random = AGCRLEnv(obs, actions, "t_heat_sp", theat_rl_actionspace)
+
+
 heat_model = tensorflow.keras.models.load_model(
     './server/tfmodels/heat.model')
 
@@ -56,5 +59,20 @@ def reset_heat_env_team():
 
 @app.post("/teamnindex")
 def set_teamnindex(body: teamnindex_endpoint):
-    data = {}
+    env_heat.index = body.index
+    env_heat.teamindex = body.team
+    return ResponseModel(data=body, message="team and index set")
+
+
+@app.get("/randomstep")
+def randomstep():
+    # return random action orignal action & random action
+    randomaction = np.random.randint(0, len(env_heat.action_space))
+    action = env_heat_random.actions[env_heat.teamindex][env_heat.action_parameter][env_heat.index]
+    obs, reward, done = env_heat.step(randomaction)
+    data = {
+        "randomaction": float(randomaction),
+        "action": float(action),
+        "randomreward": float(reward)
+    }
     return ResponseModel(data=data, message="team and index set")

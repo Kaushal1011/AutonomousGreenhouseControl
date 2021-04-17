@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import pickle
 
 from server.routes.light import app as LightRouter
+from server.routes.water import app as WaterRouter
+from server.routes.heat import app as HeatRouter
+
 import tensorflow
 import numpy as np
 
@@ -29,3 +32,5 @@ async def read_root():
     return {"message": "Welcome to this AGC RL Backend API! Visit /docs for api doc"}
 
 app.include_router(LightRouter, tags=["Light Simulation"], prefix="/light")
+app.include_router(WaterRouter, tags=["Water Simulation"], prefix="/water")
+app.include_router(HeatRouter, tags=["Heat Simulation"], prefix="/heat")

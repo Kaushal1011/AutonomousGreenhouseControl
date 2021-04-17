@@ -17,6 +17,9 @@ water_rl_actionspace = np.linspace(0, 2000, 9)
 env_water = AGCRLEnv(obs, actions, "water_sup_intervals_sp_min",
                      water_rl_actionspace)
 
+env_water_random = AGCRLEnv(obs, actions, "water_sup_intervals_sp_min",
+                            water_rl_actionspace)
+
 water_model = tensorflow.keras.models.load_model(
     './server/tfmodels/water.model')
 
@@ -57,5 +60,20 @@ def reset_water_env_team():
 
 @app.post("/teamnindex")
 def set_teamnindex(body: teamnindex_endpoint):
-    data = {}
+    env_water.index = body.index
+    env_water.teamindex = body.team
+    return ResponseModel(data=body, message="team and index set")
+
+
+@app.get("/randomstep")
+def randomstep():
+    # return random action orignal action & random action
+    randomaction = np.random.randint(0, len(env_water.action_space))
+    action = env_water_random.actions[env_water.teamindex][env_water.action_parameter][env_water.index]
+    obs, reward, done = env_water.step(randomaction)
+    data = {
+        "randomaction": float(randomaction),
+        "action": float(action),
+        "randomreward": float(reward)
+    }
     return ResponseModel(data=data, message="team and index set")

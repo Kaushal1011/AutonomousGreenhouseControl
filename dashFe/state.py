@@ -1,19 +1,19 @@
 import pandas as pd
 
 actions_assim = [0]
-rewards_assim = []
+rewards_assim = [0]
 randomactions_assim = [0]
-randomrewards_assim = []
+randomrewards_assim = [0]
 origactions_assim = [0]
 actions_heat = [0]
-rewards_heat = []
+rewards_heat = [0]
 randomactions_heat = [0]
-randomrewards_heat = []
+randomrewards_heat = [0]
 origactions_heat = [0]
 actions_water = [0]
-rewards_water = []
+rewards_water = [0]
 randomactions_water = [0]
-randomrewards_water = []
+randomrewards_water = [0]
 origactions_water = [0]
 params = [
     "time",

@@ -64,8 +64,22 @@ def start_stop_live(start, stop):
 
 
 def reset_graph():
+
     state.actions_assim = [0]
-    state.rewards_assim = []
+    state.rewards_assim = [0]
+    state.randomactions_assim = [0]
+    state.randomrewards_assim = [0]
+    state.origactions_assim = [0]
+    state.actions_heat = [0]
+    state.rewards_heat = [0]
+    state.randomactions_heat = [0]
+    state.randomrewards_heat = [0]
+    state.origactions_heat = [0]
+    state.actions_water = [0]
+    state.rewards_water = [0]
+    state.randomactions_water = [0]
+    state.randomrewards_water = [0]
+    state.origactions_water = [0]
     # call api to reset
     r = requests.get("http://0.0.0.0:8000/light/reset")
     if r.status_code != 200:
@@ -113,6 +127,16 @@ def update_graph(reset, n):
         if r.status_code != 200:
             raise Exception("status response is not 200")
         state.actions_assim.append(r.json()["data"][0])
+        r = requests.get("http://0.0.0.0:8000/light/randomstep")
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        data = r.json()["data"][0]
+        state.randomactions_assim.append(data["randomaction"])
+        state.randomrewards_assim.append(
+            data["randomreward"]+state.randomrewards_assim[-1])
+        state.origactions_assim.append(data["action"])
+        # call api to get random action random reward and orignal action
+
     # print(state.actions_assim)
     # print(state.rewards_assim)
     fig = make_subplots(rows=2, cols=2)

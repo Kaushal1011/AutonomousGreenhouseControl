@@ -48,24 +48,26 @@ def water_env(body: environment_endpoint):
 
 @app.get("/reset")
 def reset_water_env():
-    obs = env_water.resetinit()
+    obs = list(env_water.resetinit())
+    env_water_random.resetinit()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 
 @app.get("/reset_team")
 def reset_water_env_team():
-    obs = env_water.reset()
+    obs = list(env_water.reset())
+    env_water_random.reset()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 
-@app.post("/teamnindex")
+@ app.post("/teamnindex")
 def set_teamnindex(body: teamnindex_endpoint):
     env_water.index = body.index
     env_water.teamindex = body.team
     return ResponseModel(data=body, message="team and index set")
 
 
-@app.get("/randomstep")
+@ app.get("/randomstep")
 def randomstep():
     # return random action orignal action & random action
     randomaction = np.random.randint(0, len(env_water.action_space))

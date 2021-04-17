@@ -47,12 +47,14 @@ def assim_env(body: environment_endpoint):
 @app.get("/reset")
 def reset_assim_env():
     obs = list(env_assim.resetinit())
+    env_assim_random.resetinit()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 
 @app.get("/reset_team")
 def reset_assim_env_team():
     obs = list(env_assim.reset())
+    env_assim_random.resetinit()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 

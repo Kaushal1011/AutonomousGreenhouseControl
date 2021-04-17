@@ -1,5 +1,18 @@
 actions_assim = [0]
 rewards_assim = []
+randomactions_assim = [0]
+randomrewards_assim = []
+origactions_assim = [0]
+actions_heat = [0]
+rewards_heat = []
+randomactions_heat = [0]
+randomrewards_heat = []
+origactions_heat = [0]
+actions_water = [0]
+rewards_water = []
+randomactions_water = [0]
+randomrewards_water = []
+origactions_water = [0]
 params = [
     "time",
     "AssimLight",

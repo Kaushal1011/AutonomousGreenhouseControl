@@ -17,9 +17,9 @@ import json
 # prediction = assim_model.predict([obs])
 # action = np.argmax(prediction[0])
 # actions_assim.append(action)
-Action = ['Light' , 'Water' , 'Hit']
-available_Team = [1,2,3,4,5]
-available_sim = [1,2,3,4,5]
+env_type = ['Light', 'Water', 'Heat']
+available_team = [1, 2, 3, 4, 5]
+sim_index = 0
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -52,21 +52,22 @@ app.layout = html.Div(
 
         ),
         dcc.Dropdown(
-                id='Team-index',
-                options=[{'label': i, 'value': i} for i in available_Team],
-                placeholder="Team",
+            id='Team-index',
+            options=[{'label': i, 'value': i} for i in available_Team],
+            placeholder="Team",
 
         ),
         dcc.Dropdown(
-                id='sim-index',
-                options=[{'label': i, 'value': i} for i in available_sim],
-                placeholder="sim",
+            id='sim-index',
+            options=[{'label': i, 'value': i} for i in available_sim],
+            placeholder="sim",
 
 
         ),
         dcc.Graph(id="live-update-graph"),
     ]
 )
+
 
 @app.callback(
     dash.dependencies.Output("interval-component", "disabled"),

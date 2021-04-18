@@ -1,20 +1,20 @@
 import pandas as pd
 
-actions_assim = [0]
-rewards_assim = [0]
-randomactions_assim = [0]
-randomrewards_assim = [0]
-origactions_assim = [0]
-actions_heat = [0]
-rewards_heat = [0]
-randomactions_heat = [0]
-randomrewards_heat = [0]
-origactions_heat = [0]
-actions_water = [0]
-rewards_water = [0]
-randomactions_water = [0]
-randomrewards_water = [0]
-origactions_water = [0]
+c1 = ["light", "heat", "water"]
+c2 = ["original", "predicted", "random"]
+actions = {}
+for c in c1:
+    actions[c] = {}
+    for cat in c2:
+        actions[c][cat] = [0]
+
+rewards = {}
+for c in c1:
+    rewards[c] = {}
+    for cat in c2:
+        if cat != "orginal":
+            rewards[c][cat] = [0]
+
 params = [
     "time",
     "AssimLight",

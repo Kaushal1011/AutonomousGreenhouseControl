@@ -69,7 +69,8 @@ def set_teamnindex(body: teamnindex_endpoint):
 def randomstep():
     # return random action orignal action & random action
     randomaction = np.random.randint(0, len(env_assim.action_space))
-    action = env_assim_random.actions[env_assim.teamindex][env_assim.action_parameter][env_assim.index]
+    action = int(env_assim_random.actions[env_assim.teamindex]
+                 [env_assim.action_parameter][env_assim.index]/env_assim.interval)
     obs, reward, done = env_assim.step(randomaction)
     data = {
         "randomaction": float(randomaction),

@@ -70,7 +70,8 @@ def set_teamnindex(body: teamnindex_endpoint):
 def randomstep():
     # return random action orignal action & random action
     randomaction = np.random.randint(0, len(env_heat.action_space))
-    action = env_heat_random.actions[env_heat.teamindex][env_heat.action_parameter][env_heat.index]
+    action = int(env_heat_random.actions[env_heat.teamindex]
+                 [env_heat.action_parameter][env_heat.index]/env_heat.interval)
     obs, reward, done = env_heat.step(randomaction)
     data = {
         "randomaction": float(randomaction),

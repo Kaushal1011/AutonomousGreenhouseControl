@@ -71,7 +71,8 @@ def set_teamnindex(body: teamnindex_endpoint):
 def randomstep():
     # return random action orignal action & random action
     randomaction = np.random.randint(0, len(env_water.action_space))
-    action = env_water_random.actions[env_water.teamindex][env_water.action_parameter][env_water.index]
+    action = int(env_water_random.actions[env_water.teamindex]
+                 [env_water.action_parameter][env_water.index]/env_water.interval)
     obs, reward, done = env_water.step(randomaction)
     data = {
         "randomaction": float(randomaction),

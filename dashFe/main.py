@@ -18,11 +18,12 @@ import json
 # prediction = assim_model.predict([obs])
 # action = np.argmax(prediction[0])
 # actions_assim.append(action)
-env_type = ['Light', 'Water', 'Heat']
+API_URL = "http://0.0.0.0:8000"
+env_type = ["Light", "Water", "Heat"]
 available_team = [1, 2, 3, 4, 5]
 sim_index = 0
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
 
 external_stylesheets = [
@@ -41,10 +42,25 @@ app.layout = html.Div(
         html.Button("Start Simulation", id="start", n_clicks=0),
         html.Button("Stop Simulation", id="stop", n_clicks=0),
         html.Button("Reset Simulation", id="reset", n_clicks=0),
+        html.Div(
+            [
+                dcc.Dropdown(
+                    id="demo-dropdown",
+                    options=[
+                        {"label": "Light", "value": "light"},
+                        {"label": "Water", "value": "water"},
+                        {"label": "Heat", "value": "heat"},
+                    ],
+                    value="light",
+                )
+            ]
+        ),
         dcc.Interval(
             id="interval-component", interval=2000, n_intervals=0  # in milliseconds
         ),
-        dcc.Graph(id="live-update-graph"),
+        dcc.Graph(id="live-action-graph"),
+        dcc.Graph(id="live-reward-graph"),
+        dcc.Graph(id="live-obs-graph"),
     ]
 )
 
@@ -81,7 +97,7 @@ def reset_graph():
     state.randomrewards_water = [0]
     state.origactions_water = [0]
     # call api to reset
-    r = requests.get("http://0.0.0.0:8000/light/reset")
+    r = requests.get(API_URL + "/light/reset")
     if r.status_code != 200:
         raise Exception("status response is not 200")
     obs = r.json()["data"][0]
@@ -89,7 +105,7 @@ def reset_graph():
     # call api to make predictions
     payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
     # print(payload)
-    r = requests.post("http://0.0.0.0:8000/light/predict", data=payload)
+    r = requests.post(API_URL + "/light/predict", data=payload)
     if r.status_code != 200:
         raise Exception("status response is not 200")
     state.actions_assim.append(r.json()["data"][0])
@@ -98,53 +114,69 @@ def reset_graph():
 
 
 @app.callback(
-    Output("live-update-graph", "figure"),
+    Output("live-action-graph", "figure"),
+    Output("live-reward-graph", "figure"),
+    Output("live-obs-graph", "figure"),
     [Input("interval-component", "n_intervals"), Input("reset", "n_clicks")],
 )
 def update_graph(reset, n):
     ctx = dash.callback_context
+    # reset graph
     if ctx.triggered[0]["prop_id"].split(".")[0] == "reset":
         return reset_graph()
+
     for i in range(5):
         payload = json.dumps({"action": state.actions_assim[-1]})
         # print(payload)
-        r = requests.post(
-            "http://0.0.0.0:8000/light/environment", data=payload)
+        r = requests.post(API_URL + "/light/environment", data=payload)
         if r.status_code != 200:
             raise Exception("status response is not 200")
         data = r.json()["data"][0]
         obs = data["obs"]
         reward = data["reward"]
         obs_series = pd.Series(obs, index=state.params)
-        state.obs.append(obs_series, ignore_index=True)
-        # print(obs)
+        state.obs = state.obs.append(obs_series, ignore_index=True)
+        # print(state.obs)
         # print(reward)
 
         state.rewards_assim.append(reward + state.rewards_assim[-1])
         # call api to make predictions
         payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
-        r = requests.post("http://0.0.0.0:8000/light/predict", data=payload)
+        r = requests.post(API_URL + "/light/predict", data=payload)
         if r.status_code != 200:
             raise Exception("status response is not 200")
         state.actions_assim.append(r.json()["data"][0])
-        r = requests.get("http://0.0.0.0:8000/light/randomstep")
+
+        r = requests.get(API_URL + "/light/randomstep")
         if r.status_code != 200:
             raise Exception("status response is not 200")
         data = r.json()["data"][0]
         state.randomactions_assim.append(data["randomaction"])
         state.randomrewards_assim.append(
-            data["randomreward"]+state.randomrewards_assim[-1])
+            data["randomreward"] + state.randomrewards_assim[-1]
+        )
         state.origactions_assim.append(data["action"])
         # call api to get random action random reward and orignal action
 
     # print(state.actions_assim)
     # print(state.rewards_assim)
-    fig = make_subplots(rows=2, cols=2)
-    fig.add_trace(go.Scatter(y=state.actions_assim), row=1, col=1)
-    fig.add_trace(go.Scatter(y=state.rewards_assim), row=1, col=2)
-    fig.add_trace(go.Scatter(y=state.obs), row=2, col=1)
+    fig1 = go.Figure()
+    fig1.add_trace(go.Scatter(y=state.actions_assim, name="predicted actions"))
+    fig1.add_trace(go.Scatter(y=state.randomactions_assim, name="random actions"))
+    fig1.add_trace(go.Scatter(y=state.origactions_assim, name="orignal actions"))
 
-    return fig
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(y=state.rewards_assim, name="reward predicted actions"))
+    fig2.add_trace(
+        go.Scatter(y=state.randomrewards_assim, name="reward random actions")
+    )
+
+    data = [
+        go.Scatter(y=state.obs[col], name=col) for col in state.params if col != "time"
+    ]
+
+    fig3 = go.Figure(data=data)
+    return fig1, fig2, fig3
 
 
 server = app.server

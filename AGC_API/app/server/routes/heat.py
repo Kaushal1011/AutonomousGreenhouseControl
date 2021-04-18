@@ -55,7 +55,7 @@ def reset_heat_env():
 @app.get("/reset_team")
 def reset_heat_env_team():
     obs = list(env_heat.reset())
-    env_heat_random.resetinit()
+    env_heat_random.reset()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 

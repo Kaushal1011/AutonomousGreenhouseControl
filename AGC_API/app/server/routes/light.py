@@ -54,7 +54,7 @@ def reset_assim_env():
 @app.get("/reset_team")
 def reset_assim_env_team():
     obs = list(env_assim.reset())
-    env_assim_random.resetinit()
+    env_assim_random.reset()
     return ResponseModel(data=obs, message="luminance environment reset successful")
 
 

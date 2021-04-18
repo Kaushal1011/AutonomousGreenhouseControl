@@ -10,7 +10,7 @@ from server.AGCRLEnv import AGCRLEnv
 import numpy as np
 import tensorflow
 import pickle
-
+import random
 app = APIRouter()
 
 with open("./server/observations.pickle", "rb") as handle:
@@ -68,7 +68,7 @@ def set_teamnindex(body: teamnindex_endpoint):
 @app.get("/randomstep")
 def randomstep():
     # return random action orignal action & random action
-    randomaction = np.random.randint(0, len(env_assim.action_space))
+    randomaction = random.choice([0, 20])
     action = int(env_assim_random.actions[env_assim.teamindex]
                  [env_assim.action_parameter][env_assim.index]/env_assim.interval)
     obs, reward, done = env_assim.step(randomaction)

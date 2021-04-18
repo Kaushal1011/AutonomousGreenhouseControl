@@ -30,6 +30,8 @@ with open("./server/observations.pickle", "rb") as handle:
 with open("./server/actions.pickle", "rb") as handle:
     actions = pickle.load(handle)
 
+UPDATEDB = False
+
 assim_rl_actionspace = np.linspace(0, 100, 21)
 env_assim = AGCRLEnv(obs, actions, "assim_sp", assim_rl_actionspace)
 env_assim_random = AGCRLEnv(obs, actions, "assim_sp", assim_rl_actionspace)
@@ -43,8 +45,8 @@ obsglob = []
 actions = []
 actionsrandom = []
 origactions = []
-rewards = []
-randomrewards = []
+rewards = [0]
+randomrewards = [0]
 
 
 @app.post("/predict")
@@ -65,22 +67,18 @@ def assim_env(body: environment_endpoint):
     obs, reward, done = env_assim.step(body.action)
     dict = {"obs": list(obs), "reward": float(reward), "done": bool(done)}
     obsglob.append(list(obs))
-    rewards.append(reward)
+    rewards.append(reward+rewards[-1])
     return ResponseModel(data=dict, message="obs,reward,last step values")
 
 
 @app.get("/reset")
 def reset_assim_env():
     # delete action observation reward
-    obsglob = []
-    actions = []
-    actionsrandom = []
-    origactions = []
-    rewards = []
-    randomrewards = []
-    cursor.execute(deleteaction)
-    cursor.execute(deleteobs)
-    cursor.execute(deleterewards)
+    setglobalvars()
+    if UPDATEDB:
+        cursor.execute(deleteaction)
+        cursor.execute(deleteobs)
+        cursor.execute(deleterewards)
     conn.commit()
     obs = list(env_assim.resetinit())
     env_assim_random.resetinit()
@@ -90,15 +88,11 @@ def reset_assim_env():
 @app.get("/reset_team")
 def reset_assim_env_team():
     # delete action observation reward
-    obsglob = []
-    actions = []
-    actionsrandom = []
-    origactions = []
-    rewards = []
-    randomrewards = []
-    cursor.execute(deleteaction)
-    cursor.execute(deleteobs)
-    cursor.execute(deleterewards)
+    setglobalvars()
+    if UPDATEDB:
+        cursor.execute(deleteaction)
+        cursor.execute(deleteobs)
+        cursor.execute(deleterewards)
     conn.commit()
     obs = list(env_assim.reset())
     env_assim_random.reset()
@@ -127,14 +121,14 @@ def randomstep():
         "randomreward": float(reward)
     }
     actionsrandom.append(randomaction)
-    randomrewards.append(reward)
+    randomrewards.append(reward+randomrewards[-1])
     origactions.append(action)
     return ResponseModel(data=data, message="team and index set")
 
 
 @app.get("/updatetableau")
 def updatetableau():
-    print(obsglob, rewards, actions)
+    # print(obsglob, rewards, actions)
     for i in obsglob:
         cursor.execute(insertobs.format(*i))
     for i in range(len(rewards)-1):
@@ -143,10 +137,23 @@ def updatetableau():
         cursor.execute(insertaction.format(
             actions[i], origactions[i], actionsrandom[i], i))
     conn.commit()
+    setglobalvars()
+    return ResponseModel(data=True, message="successfully updated to tableau")
+
+
+def setglobalvars():
+
+    global obsglob
+    global actions
+    global actionsrandom
+    global origactions
+    global rewards
+    global randomrewards
     obsglob = []
     actions = []
     actionsrandom = []
     origactions = []
-    rewards = []
-    randomrewards = []
-    return ResponseModel(data=True, message="successfully updated to tableau")
+    rewards = [0]
+    randomrewards = [0]
+
+    return True

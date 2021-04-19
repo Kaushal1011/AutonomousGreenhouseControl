@@ -1,4 +1,4 @@
-# AGC_RL
+# Autonomous Greenhouse Control and Monitoring
 
 Reinforcement Learning Approach Tried On AGC 2.0 Data
 

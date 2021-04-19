@@ -6,7 +6,7 @@ __pycache__/
 .env
 # C extensions
 *.so
-
+keys.sh
 # Distribution / packaging
 /logs
 /models

@@ -1,36 +1,30 @@
-import QPSK
-import QFSK
-import MPSK
-import Coding
-import channel
-import BPSK
-import BFSK
+from werkzeug.serving import run_simple
+import dash
 from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 import numpy as np
+import pandas as pd
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
-import dash
-from typing import List, Tuple
+import requests
+import state
+import json
 
-#!/usr/bin/env python3
+API_URL = "http://0.0.0.0:8000"
+available_team = [1, 2, 3, 4, 5]
+sim_index = 0
+
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+
 
 external_stylesheets = [
     dbc.themes.BOOTSTRAP,
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
 ]
-colors = {"background": "#0e0e0e", "text": "#4ecca3", "options": "#fc7e2f"}
-
-palatte = {
-    "A": "#101010",
-    "B": "#33415c",
-    "C": "#5c677d",
-    "D": "#7d8597",
-    "E": "#f4f4f4",
-    "F": "#2f2f2f",
-}
 
 app = dash.Dash(
     __name__,
@@ -38,627 +32,244 @@ app = dash.Dash(
     meta_tags=[{"name": "viewport", "content": "width=device-width"}],
 )
 
-server = app.server
-app.title = "Dayummunication - BFSK QFSK BPSK QPSK"
-
-t_csd = np.linspace(0.0, 2.0 * np.math.pi, 100)
-
-# Default parameters
-f_c = 100.0
-t_c = 1.0 / f_c
-
-# Sampling rate
-f_s = 10000.0
-t_s = 1.0 / f_s
-
-# MPSK Parameters
-Tb = 0.01
-Eb = 0.001
-
-fs_min = 10000
-fs_max = 20000
-
 app.layout = html.Div(
-    style={"backgroundColor": colors["background"]},
-    children=[
-        dbc.Container(
+    [
+        dbc.Row(
             [
-                html.H1(
-                    children="Dayummunication",
-                    style={
-                        "textAlign": "center",
-                        "mt": 10,
-                        "mb": 10,
-                        "color": colors["text"],
-                    },
+                html.Button("Start Simulation", id="start", n_clicks=0),
+                html.Button("Stop Simulation", id="stop", n_clicks=0),
+                html.Button("Reset Simulation", id="reset", n_clicks=0),
+                html.Button("Reset Team", id="reset-team", n_clicks=0),
+                dbc.Col(
+                    dcc.Dropdown(
+                        id="dropdown",
+                        options=[
+                            {"label": "Light", "value": "light"},
+                            {"label": "Water", "value": "water"},
+                            {"label": "Heat", "value": "heat"},
+                        ],
+                        value="light",
+                    ),
+                    width={"size": 1},
                 ),
-                html.H5(
-                    children="Making digital communication look dayumm!",
-                    style={
-                        "textAlign": "center",
-                        "mt": 10,
-                        "mb": 10,
-                        "color": colors["text"],
-                    },
+                dcc.Input(
+                    id="index",
+                    type="number",
+                    placeholder="Index",
+                    min=0,
+                    step=1,
+                    debounce=True,
                 ),
-                html.Hr(),
-                html.Div(
-                    id="modulation-type",
-                    children=[
-                        html.H2(
-                            children="Modulation Scheme",
-                            style={
-                                "mt": 10,
-                                "mb": 10,
-                                "textAlign": "left",
-                                "color": colors["text"],
-                            },
-                        ),
-                        dcc.Dropdown(
-                            id="modulation-scheme",
-                            options=[
-                                {
-                                    "label": "Binary Phase Shift Keying (BPSK)",
-                                    "value": "BPSK",
-                                },
-                                {
-                                    "label": "Binary Frequency Shift Keying (BFSK)",
-                                    "value": "BFSK",
-                                },
-                                {
-                                    "label": "Quadrature Phase Shift Keying (QPSK)",
-                                    "value": "QPSK",
-                                },
-                                {
-                                    "label": "Quadrature Frequency Shift Keying (QFSK)",
-                                    "value": "QFSK",
-                                },
-                                # {
-                                #     "label": "M'ary Phase Shift Keying (MPSK)",
-                                #     "value": "MPSK",
-                                # },
-                            ],
-                            placeholder="For eg. BPSK",
-                            value="BPSK",
-                            style={"mt": 10, "mb": 10, "color": "white"},
-                        ),
-                    ],
+                dcc.Input(
+                    id="team",
+                    type="number",
+                    placeholder="Team",
+                    min=1,
+                    max=5,
+                    step=1,
+                    debounce=True,
                 ),
-            ],
-            fluid=True,
+                html.Button("Update Tableau", id="update-tableau", n_clicks=0),
+                html.Div(id="updated"),
+            ]
         ),
-        dbc.Container(
-            id="modulation-params",
-            children=[
-                html.H4("Modulation Parameters"),
-                html.H6(
-                    "Please enter reasonable values for the parameters. If you're not sure, let them be."
-                ),
-                dbc.Row(
-                    children=[
-                        dbc.Col(
-                            children=[
-                                html.Label(
-                                    "Bit Energy - Eb (J)",
-                                    style={"color": colors["options"]},
-                                ),
-                                dcc.Input(
-                                    id="energy",
-                                    value=0.001,
-                                    type="number",
-                                    style={"color": "white"},
-                                    min=0.001,
-                                    max=10,
-                                ),
-                            ],
-                            sm=6,
-                            md=4,
-                            lg=3,
-                        ),
-                        dbc.Col(
-                            [
-                                html.Label(
-                                    "Bit Time - Tb (s)",
-                                    style={"color": colors["options"]},
-                                ),
-                                dcc.Input(
-                                    id="bit-time",
-                                    value=0.01,
-                                    type="number",
-                                    style={"color": "white"},
-                                    min=0.001,
-                                    max=5,
-                                ),
-                            ],
-                            sm=6,
-                            md=4,
-                            lg=3,
-                        ),
-                        dbc.Col(
-                            [
-                                html.Label(
-                                    "Carrier Frequency - fc (Hz)",
-                                    style={"color": colors["options"]},
-                                ),
-                                dcc.Input(
-                                    id="carrier-frequency",
-                                    value=100,
-                                    type="number",
-                                    style={"color": "white"},
-                                    min=100,
-                                    max=fs_min / 8,
-                                ),
-                            ],
-                            sm=6,
-                            md=4,
-                            lg=3,
-                        ),
-                        dbc.Col(
-                            [
-                                html.Label(
-                                    "Sampling Frequency - fs (Hz)",
-                                    style={"color": colors["options"]},
-                                ),
-                                dcc.Input(
-                                    id="sampling-frequency",
-                                    value=10000,
-                                    type="number",
-                                    style={"color": "white"},
-                                    min=fs_min,
-                                    max=fs_max,
-                                ),
-                            ],
-                            sm=6,
-                            md=4,
-                            lg=3,
-                        ),
-                        dbc.Col(
-                            [
-                                html.Label(
-                                    "Noise Power Spectral Density - N0 (W-Hz)",
-                                    style={"color": colors["options"]},
-                                ),
-                                dcc.Input(
-                                    id="noise-energy",
-                                    value=0.000004,
-                                    type="number",
-                                    style={"color": "white"},
-                                    min=0.00000000000000000001,
-                                    max=10,
-                                ),
-                            ],
-                            sm=6,
-                            md=4,
-                            lg=3,
-                        ),
-                    ]
-                ),
-                # dbc.Row(
-                #     children=[
-                #     ],
-                # ),
-            ],
-            fluid=True
-            # style={"columnCount": 3},
+        dcc.Interval(
+            id="interval-component", interval=2000, n_intervals=0  # in milliseconds
         ),
-        dbc.Container(
+        dbc.Row(
             [
-                html.Div(
-                    # id="input",
-                    # className="align-middle",
-                    children=[
-                        html.H2(
-                            children="Input Signal",
-                            style={
-                                "mt": 10,
-                                "mb": 10,
-                                "textAlign": "left",
-                                "color": colors["text"],
-                            },
-                        ),
-                        dcc.Textarea(
-                            id="input-str",
-                            value="0",
-                            # type="text",
-                            style={"mt": 10, "mb": 10, "color": "white"},
-                        ),
-                        html.Button(
-                            id="submit-button-state",
-                            n_clicks=0,
-                            children="Submit",
-                            style={"mt": 10, "mb": 10, "color": "white", "pb": 5},
-                        ),
-                        dcc.Checklist(
-                            id="coding-flag",
-                            options=[
-                                {
-                                    "label": "Encode. Encoding is done using extended Golay code i.e. [24, 12, 8] linear ECC.",
-                                    "value": "True",
-                                },
-                            ],
-                            labelStyle={"font-size": 16},
-                            style={"margin": 5},
-                        ),
-                    ],
-                ),
-                html.Hr(),
-                html.Div(id="container"),
-                html.Div(
-                    dcc.Graph(id="empty", figure={"data": []}),
-                    style={"display": "none"},
-                ),
-                html.Hr(),
-                html.H2("Bit Error Rate"),
-                dbc.Row(
-                    children=[
-                        dbc.Col(
-                            children=[
-                                html.H3(
-                                    children="Theoretical",
-                                    style={
-                                        "mt": 10,
-                                        "mb": 10,
-                                        "textAlign": "center",
-                                        "color": colors["text"],
-                                    },
-                                ),
-                                html.H3(
-                                    children="0",
-                                    id="ber-theoretical",
-                                    style={
-                                        "mt": 10,
-                                        "mb": 10,
-                                        "textAlign": "center",
-                                        "color": colors["text"],
-                                    },
-                                ),
-                            ],
-                            md=6,
-                        ),
-                        dbc.Col(
-                            children=[
-                                html.H3(
-                                    children="Practical",
-                                    style={
-                                        "mt": 10,
-                                        "mb": 10,
-                                        "textAlign": "center",
-                                        "color": colors["options"],
-                                    },
-                                ),
-                                html.H3(
-                                    children="0",
-                                    id="ber-practical",
-                                    style={
-                                        "mt": 10,
-                                        "mb": 10,
-                                        "textAlign": "center",
-                                        "color": colors["options"],
-                                    },
-                                ),
-                            ],
-                            md=6,
-                        ),
-                    ]
-                ),
-                html.Div(
-                    # id="input",
-                    # className="align-middle",
-                    children=[
-                        html.H2(
-                            children="Output Signal",
-                            style={
-                                "mt": 10,
-                                "mb": 10,
-                                "textAlign": "left",
-                                "color": colors["text"],
-                            },
-                        ),
-                        dcc.Textarea(
-                            id="output-str",
-                            # type="text",
-                            style={"mt": 10, "mb": 10, "color": "white"},
-                        ),
-                    ]
-                ),
-                # dcc.Graph(id="signal",),
-                # dcc.Graph(id="modulated-signal"),
-                # dbc.Row(children=[
-                # dbc.Col(dcc.Graph(id="noise"), md=12, lg=6),
-                # dbc.Col(dcc.Graph(id="noise-signal"),
-                # md=12, lg=6),
-                # ]),
-                # dcc.Graph(id="demodulated-signal"),
-            ],
-            fluid=True,
+                dbc.Col(dcc.Graph(id="live-action-graph"), width={"size": 6}),
+                dbc.Col(dcc.Graph(id="live-reward-graph"), width={"size": 6}),
+            ]
         ),
-    ],
+        dbc.Row(
+            dbc.Col(dcc.Graph(id="live-obs-graph"), width={"size": 10, "offset": 1}),
+            style={"height": "50vh"},
+        ),
+    ]
 )
 
 
 @app.callback(
+    dash.dependencies.Output("interval-component", "disabled"),
     [
-        # Output("signal", "figure"),
-        # Output("modulated-signal", "figure"),
-        # Output("noise", "figure"),
-        # Output("noise-signal", "figure"),
-        # Output("demodulated-signal", "figure"),
-        Output("container", "children"),
-        Output("ber-theoretical", "children"),
-        Output("ber-practical", "children"),
-        Output("output-str", "value"),
+        dash.dependencies.Input("stop", "n_clicks"),
+        dash.dependencies.Input("start", "n_clicks"),
     ],
-    [
-        Input("submit-button-state", "n_clicks"),
-        Input("coding-flag", "value"),
-        Input("modulation-scheme", "value"),
-        Input("energy", "value"),
-        Input("bit-time", "value"),
-        Input("carrier-frequency", "value"),
-        Input("sampling-frequency", "value"),
-        Input("noise-energy", "value"),
-    ],
-    [State("input-str", "value")],
 )
-def conv(
-    n_clicks: int,
-    coding_flag: str,
-    modulation_scheme: str,
-    Eb: int,
-    Tb: int,
-    f_c: int,
-    f_s: int,
-    N0: str,
-    input_str: str,
-) -> tuple:
-    if n_clicks >= 0:
-
-        chars = []
-        for i in input_str:
-            b = bin(ord(i))[2:]
-            b = "0" + b if len(b) == 7 else "00" + b
-            chars.append(b)
-
-        chars = [int(i) for i in list("".join(chars))]
-        charorig = None
-        modulated_signal = None
-        noise_signal = None
-        signal_plus_noise = None
-        demodulated_signal = None
-        t = None
-        ber_theoretical = 0
-        ber_practical = 0
-        out = None
-        graphs = []
-
-        binary_signal_figure = go.Figure()
-        binary_signal_figure.add_trace(
-            go.Scatter(
-                x=list(range(len(chars))),
-                y=chars,
-                mode="lines+markers",
-                marker=dict(color="#4ecca3"),
-            )
-        )
-        binary_signal_figure.update_layout(
-            title="Binary Signal",
-            xaxis_title="Bit #",
-            yaxis_title="Value",
-            paper_bgcolor=palatte["A"],
-            font=dict(color=palatte["E"], size=14),
-            template="plotly_dark",
-        )
-        graphs.append(dcc.Graph(id="signal", figure=binary_signal_figure))
-
-        try:
-            if coding_flag[0] == "True":
-                charsorig = chars
-                chars = Coding.encodebits(chars)
-                encoded_binary_signal_figure = go.Figure()
-                encoded_binary_signal_figure.add_trace(
-                    go.Scatter(
-                        x=list(range(len(chars))),
-                        y=chars,
-                        mode="lines+markers",
-                        marker=dict(color="#4ecca3"),
-                    )
-                )
-                encoded_binary_signal_figure.update_layout(
-                    title="Encoded Binary Signal",
-                    xaxis_title="Bit #",
-                    yaxis_title="Value",
-                    paper_bgcolor=palatte["A"],
-                    font=dict(color=palatte["E"], size=14),
-                    template="plotly_dark",
-                )
-                graphs.append(
-                    dcc.Graph(id="encoded-signal", figure=encoded_binary_signal_figure)
-                )
-        except (TypeError, IndexError):
-            pass
-
-        if modulation_scheme == "BPSK":
-            modulated_signal = BPSK.modulate(chars, Eb, Tb, f_c, f_s)
-            noise_signal = channel.generate_noise(modulated_signal, N0, f_s)
-            signal_plus_noise = modulated_signal + noise_signal
-            demodulated_signal = BPSK.demodulate(signal_plus_noise, Tb, f_c, f_s)
-            t = np.linspace(0, len(chars) * Tb, int(len(chars) * Tb * f_s))
-            ber_theoretical, ber_practical = BPSK.error_probabilities(
-                chars, demodulated_signal, Eb, N0
-            )
-
-        if modulation_scheme == "BFSK":
-            modulated_signal = BFSK.modulate(chars, Eb, Tb, f_c, f_s)
-            noise_signal = channel.generate_noise(modulated_signal, N0, f_s)
-            signal_plus_noise = modulated_signal + noise_signal
-            demodulated_signal = BFSK.demodulate(signal_plus_noise, Tb, f_c, f_s)
-            t = np.linspace(0, len(chars) * Tb, int(len(chars) * Tb * f_s))
-            ber_theoretical, ber_practical = BFSK.error_probabilities(
-                chars, demodulated_signal, Eb, N0
-            )
-
-        if modulation_scheme == "QPSK":
-            modulated_signal = QPSK.modulate(chars, Eb, Tb, f_c, f_s)
-            noise_signal = channel.generate_noise(modulated_signal, N0, f_s)
-            signal_plus_noise = modulated_signal + noise_signal
-            demodulated_signal = QPSK.demodulate(signal_plus_noise, Tb, f_c, f_s)
-            symbols = np.array([chars[0::2], chars[1::2]])
-            t = np.linspace(
-                0,
-                np.size(symbols, axis=1) * Tb,
-                int(np.size(symbols, axis=1) * Tb * f_s),
-            )
-            ser, ber_theoretical, ber_practical = MPSK.error_probabilities(
-                chars, demodulated_signal, Eb, N0, 2, 4
-            )
-
-        if modulation_scheme == "QFSK":
-            modulated_signal = QFSK.modulate(chars, Eb, Tb, f_c, f_s)
-            noise_signal = channel.generate_noise(modulated_signal, N0, f_s)
-            signal_plus_noise = modulated_signal + noise_signal
-            demodulated_signal = QFSK.demodulate(signal_plus_noise, Tb, f_c, f_s)
-            t = np.linspace(0, len(chars) * Tb, int(len(chars) * Tb * f_s))
-            ser, ber_theoretical, ber_practical = QFSK.error_probabilities(
-                chars, demodulated_signal, Eb, N0
-            )
-
-        modulated_signal_figure = go.Figure()
-        modulated_signal_figure.add_trace(
-            go.Scatter(x=t, y=modulated_signal, marker=dict(color="#fc7e2f")),
-        )
-        modulated_signal_figure.update_layout(
-            title="Modulated Signal",
-            xaxis_title="Time (s)",
-            yaxis_title="Amplitude",
-            paper_bgcolor=palatte["A"],
-            font=dict(color=palatte["E"], size=14),
-            template="plotly_dark",
-        )
-        graphs.append(dcc.Graph(id="modulated-signal", figure=modulated_signal_figure))
-
-        noise_figure = go.Figure()
-        noise_figure.add_trace(
-            go.Scatter(x=t, y=noise_signal, marker=dict(color="#4ecca3")),
-        )
-        noise_figure.update_layout(
-            title="Additive White Gaussian Noise",
-            xaxis_title="Time (s)",
-            yaxis_title="Amplitude",
-            paper_bgcolor=palatte["A"],
-            font=dict(color=palatte["E"], size=14),
-            template="plotly_dark",
-        )
-
-        noise_signal_figure = go.Figure()
-        noise_signal_figure.add_trace(
-            go.Scatter(x=t, y=signal_plus_noise, marker=dict(color="#fc7e2f")),
-        )
-
-        # noise_signal_figure = make_subplots(rows=1, cols=2)
-        # noise_signal_figure.add_trace(
-        #     go.Scatter(x=t, y=noise_signal, marker=dict(color="#4ecca3")), row=1, col=1,
-        # )
-        # noise_signal_figure.add_trace(
-        #     go.Scatter(x=t, y=signal_plus_noise, marker=dict(color="#fc7e2f")), row=1, col=2,
-        # )
-        noise_signal_figure.update_layout(
-            title="Modulation Signal + Noise Signal",
-            xaxis_title="Time (s)",
-            yaxis_title="Amplitude",
-            paper_bgcolor=palatte["A"],
-            font=dict(color=palatte["E"], size=14),
-            template="plotly_dark",
-        )
-        graphs.append(
-            dbc.Row(
-                children=[
-                    dbc.Col(dcc.Graph(id="noise", figure=noise_figure), md=12, lg=6),
-                    dbc.Col(
-                        dcc.Graph(id="noise-signal", figure=noise_signal_figure),
-                        md=12,
-                        lg=6,
-                    ),
-                ]
-            ),
-        )
-
-        demodulated_signal_figure = go.Figure()
-        demodulated_signal_figure.add_trace(
-            go.Scatter(
-                x=t,
-                y=demodulated_signal,
-                mode="lines+markers",
-                marker=dict(color="#4ecca3"),
-            ),
-        )
-        demodulated_signal_figure.update_layout(
-            title="Demodulated Signal",
-            xaxis_title="Time (s)",
-            yaxis_title="Value",
-            paper_bgcolor=palatte["A"],
-            font=dict(color=palatte["E"], size=14),
-            template="plotly_dark",
-        )
-        graphs.append(
-            dcc.Graph(id="demodulated-signal", figure=demodulated_signal_figure)
-        )
-
-        out = decode_to_str(demodulated_signal)
-
-        try:
-            if coding_flag[0] == "True":
-
-                # Generate new plot for decoded signal
-                decoded_signal = Coding.decodebits(demodulated_signal)
-                decoded_signal_figure = go.Figure()
-                decoded_signal_figure.add_trace(
-                    go.Scatter(
-                        x=t,
-                        y=decoded_signal,
-                        mode="lines+markers",
-                        marker=dict(color="#4ecca3"),
-                    ),
-                )
-                decoded_signal_figure.update_layout(
-                    title="Decoded Signal",
-                    xaxis_title="Time (s)",
-                    yaxis_title="Value",
-                    paper_bgcolor=palatte["A"],
-                    font=dict(color=palatte["E"], size=14),
-                    template="plotly_dark",
-                )
-                graphs.append(
-                    dcc.Graph(id="decoded-signal", figure=decoded_signal_figure)
-                )
-                out = decode_to_str(decoded_signal)
-                # Calculate new error_probabilities
-                ber_theoretical_old = ber_theoretical
-                ber_theoretical, ber_practical = Coding.error_probabilities(
-                    charsorig, decoded_signal, Eb, N0, ber_theoretical_old
-                )
-
-                # Convert to string
-
-        except (TypeError, IndexError):
-            pass
-        # return (
-        #     binary_signal_figure,
-        #     modulated_signal_figure,
-        #     noise_figure,
-        #     noise_signal_figure,
-        #     demodulated_signal_figure,
-        # )
-        return (html.Div(graphs), ber_theoretical, ber_practical, out)
+def start_stop_live(start, stop):
+    ctx = dash.callback_context
+    if ctx.triggered[0]["prop_id"].split(".")[0] == "start":
+        return False
+    return True
 
 
-def decode_to_str(demodulated_signal: List[int]) -> str:
-    chars: List[List[int]] = [
-        demodulated_signal[i * 8 : (i + 1) * 8]
-        for i in range(len(demodulated_signal) // 8)
+@app.callback(
+    Output("updated", "children"),
+    [Input("update-tableau", "n_clicks"), Input("dropdown", "value")],
+)
+def update_data_tableau(n, cat):
+    ctx = dash.callback_context
+    if ctx.triggered[0]["prop_id"].split(".")[0] == "update-tableau":
+        requests.get(API_URL + "/{}/updatetableau".format(cat))
+        return "Updated"
+    return ""
+
+
+def reset_graph(cat, reset_team=False):
+    state.actions = {}
+    for c in state.c1:
+        state.actions[c] = {}
+        for category in state.c2:
+            state.actions[c][category] = [0]
+
+    state.rewards = {}
+    for c in state.c1:
+        state.rewards[c] = {}
+        for category in state.c2:
+            if category != "orginal":
+                state.rewards[c][category] = [0]
+
+    state.obs = pd.DataFrame(columns=state.params)
+    # call api to reset
+    if reset_team:
+        r = requests.get(API_URL + "/{}/reset_team".format(cat))
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        obs = r.json()["data"][0]
+    else:
+        r = requests.get(API_URL + "/{}/reset".format(cat))
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        obs = r.json()["data"][0]
+    # print(obs)
+    # call api to make predictions
+    payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
+    # print(payload)
+    r = requests.post(API_URL + "/{}/predict".format(cat), data=payload)
+    if r.status_code != 200:
+        raise Exception("status response is not 200")
+    state.actions[cat]["predicted"].append(r.json()["data"][0])
+
+    fig1 = go.Figure()
+    fig1.add_trace(
+        go.Scatter(y=state.actions[cat]["predicted"], name="predicted actions")
+    )
+    fig1.add_trace(go.Scatter(y=state.actions[cat]["random"], name="random actions"))
+    fig1.add_trace(go.Scatter(y=state.actions[cat]["original"], name="orignal actions"))
+
+    fig2 = go.Figure()
+    fig2.add_trace(
+        go.Scatter(y=state.rewards[cat]["predicted"], name="reward predicted actions")
+    )
+    fig2.add_trace(
+        go.Scatter(y=state.rewards[cat]["random"], name="reward random actions")
+    )
+
+    data = [
+        go.Scatter(y=state.obs[col], name=col) for col in state.params if col != "time"
     ]
 
-    return "".join([chr(int("".join([str(j) for j in i]), base=2)) for i in chars])
+    fig3 = go.Figure(data=data)
+    return fig1, fig2, fig3
 
 
+@app.callback(
+    Output("live-action-graph", "figure"),
+    Output("live-reward-graph", "figure"),
+    Output("live-obs-graph", "figure"),
+    [
+        Input("interval-component", "n_intervals"),
+        Input("reset", "n_clicks"),
+        Input("reset-team", "n_clicks"),
+        Input("index", "value"),
+        Input("team", "value"),
+        Input("dropdown", "value"),
+    ],
+)
+def update_graph(n, reset, reset_team, index, team, cat):
+    ctx = dash.callback_context
+    # reset graph
+    if ctx.triggered[0]["prop_id"].split(".")[0] == "reset":
+        return reset_graph(cat)
+    if ctx.triggered[0]["prop_id"].split(".")[0] == "dropdown":
+        return reset_graph(cat)
+    if ctx.triggered[0]["prop_id"].split(".")[0] == "reset-team":
+        return reset_graph(cat, reset_team=True)
+
+    if (
+        ctx.triggered[0]["prop_id"].split(".")[0] == "index"
+        or ctx.triggered[0]["prop_id"].split(".")[0] == "team"
+    ):
+        if not team:
+            team = 0
+        if not index:
+            index = 0
+        payload = json.dumps({"team": team, "index": index})
+        requests.post(API_URL + "/{}/teamnindex".format(cat), data=payload)
+        return reset_graph(cat)
+
+    for i in range(5):
+        payload = json.dumps({"action": state.actions[cat]["predicted"][-1]})
+        # print(payload)
+        r = requests.post(API_URL + "/{}/environment".format(cat), data=payload)
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        data = r.json()["data"][0]
+        obs = data["obs"]
+        reward = data["reward"]
+        obs_series = pd.Series(obs, index=state.params)
+        state.obs = state.obs.append(obs_series, ignore_index=True)
+        # print(state.obs)
+        # print(reward)
+
+        state.rewards[cat]["predicted"].append(
+            reward + state.rewards[cat]["predicted"][-1]
+        )
+        # call api to make predictions
+        payload = json.dumps({k: v for (k, v) in zip(state.params, obs)})
+        r = requests.post(API_URL + "/{}/predict".format(cat), data=payload)
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        state.actions[cat]["predicted"].append(r.json()["data"][0])
+
+        r = requests.get(API_URL + "/{}/randomstep".format(cat))
+        if r.status_code != 200:
+            raise Exception("status response is not 200")
+        data = r.json()["data"][0]
+        state.actions[cat]["random"].append(data["randomaction"])
+        state.rewards[cat]["random"].append(
+            data["randomreward"] + state.rewards[cat]["random"][-1]
+        )
+        state.actions[cat]["original"].append(data["action"])
+        # call api to get random action random reward and orignal action
+
+    # print(state.actions[cat])
+    # print(state.rewards_assim)
+    fig1 = go.Figure()
+    fig1.add_trace(
+        go.Scatter(y=state.actions[cat]["predicted"], name="predicted actions")
+    )
+    fig1.add_trace(go.Scatter(y=state.actions[cat]["random"], name="random actions"))
+    fig1.add_trace(go.Scatter(y=state.actions[cat]["original"], name="orignal actions"))
+
+    fig2 = go.Figure()
+    fig2.add_trace(
+        go.Scatter(y=state.rewards[cat]["predicted"], name="reward predicted actions")
+    )
+    fig2.add_trace(
+        go.Scatter(y=state.rewards[cat]["random"], name="reward random actions")
+    )
+
+    data = [
+        go.Scatter(y=state.obs[col], name=col) for col in state.params if col != "time"
+    ]
+
+    fig3 = go.Figure(data=data)
+    return fig1, fig2, fig3
+
+
+server = app.server
+app.title = "AGC | RL"
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    run_simple("0.0.0.0", 8050, app.server, use_debugger=True)

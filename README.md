@@ -42,7 +42,7 @@ We built the following things and integrated them as a complete simulation contr
 
 ## Our Pipeline
 
-![](./flowchartsandss/PlannedArch.png)
+![](./flowchartsandss/AGC_Pipeline.png)
 
 ## Dashboard for controlling simulation and monitoring environment
 

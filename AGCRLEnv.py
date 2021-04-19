@@ -16,7 +16,11 @@ class AGCRLEnv:
         self.interval=action_space[1]-action_space[0]
         
     def estimate_closest_as(self,value):
-        return self.action_space[int(value/self.interval)]
+        try:
+            closest=self.action_space[int(value/self.interval)]
+        except:
+            closest=self.action_space[-1]
+        return closest
     
     def step(self,action):
         """

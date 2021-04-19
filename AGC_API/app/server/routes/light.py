@@ -15,7 +15,8 @@ from server.database import (
     updatereward,
     deleteaction,
     deleteobs,
-    deleterewards
+    deleterewards,
+    UPDATEDB
 
 )
 from server.AGCRLEnv import AGCRLEnv
@@ -30,7 +31,7 @@ with open("./server/observations.pickle", "rb") as handle:
 with open("./server/actions.pickle", "rb") as handle:
     actions = pickle.load(handle)
 
-UPDATEDB = False
+# UPDATEDB = False
 
 assim_rl_actionspace = np.linspace(0, 100, 21)
 env_assim = AGCRLEnv(obs, actions, "assim_sp", assim_rl_actionspace)

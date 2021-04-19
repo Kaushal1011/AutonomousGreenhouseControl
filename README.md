@@ -8,6 +8,12 @@ Find our pitch presentation in [Presentation](./AOBD_%20AutonomousGreenhouseCont
 
 The stated definition of our Project is the tryst of Agriculture with Reinforcement Learning. For this, the selected dataset is Autonomous Greenhouse Challenge. The purpose of using this dataset is to create an RL environment that indeed focuses on how a plantation knowledge of tomato crops can be encoded into an AI algorithm and based on that, automate decisions just like humans. This indeed helps to understand the growing patterns of tomato crop in changing weather conditions and other contributing factors significantly affecting the same.
 
+## Contributors
+- [Kaushal Patil](https://github.com/Kaushal1011)
+- [Arpitsinh Vaghela](https://github.com/arpitvaghela)
+- [Pathik Patel](https://github.com/pathikpatel-ml)
+- [Vyoma Patel](https://github.com/nerdyvyoma136)
+
 ## Problem statement
 
 The main idea here is how to understand and automatically control the quality of cherry tomatoes by considering different parameters like temperature, air, water supply, light, etc.

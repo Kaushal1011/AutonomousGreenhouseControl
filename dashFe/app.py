@@ -205,9 +205,10 @@ def update_graph(n, reset, reset_team, index, team, cat):
             team = 0
         if not index:
             index = 0
+        fig = reset_graph(cat)
         payload = json.dumps({"team": team, "index": index})
         requests.post(API_URL + "/{}/teamnindex".format(cat), data=payload)
-        return reset_graph(cat)
+        return fig
 
     for i in range(5):
         payload = json.dumps({"action": state.actions[cat]["predicted"][-1]})

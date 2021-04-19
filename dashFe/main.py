@@ -13,11 +13,6 @@ import requests
 import state
 import json
 
-# obs = env_assim.resetinit()
-# obs = list(obs)
-# prediction = assim_model.predict([obs])
-# action = np.argmax(prediction[0])
-# actions_assim.append(action)
 API_URL = "http://0.0.0.0:8000"
 available_team = [1, 2, 3, 4, 5]
 sim_index = 0
@@ -73,6 +68,8 @@ app.layout = html.Div(
                     step=1,
                     debounce=True,
                 ),
+                html.Button("Update Tableau", id="update-tableau", n_clicks=0),
+                html.Div(id="updated"),
             ]
         ),
         dcc.Interval(
@@ -104,6 +101,15 @@ def start_stop_live(start, stop):
     if ctx.triggered[0]["prop_id"].split(".")[0] == "start":
         return False
     return True
+
+
+@app.callback(
+    Output("updated", "children"),
+    [Input("update-tableau", "n_clicks"), Input("dropdown", "value")],
+)
+def update_data_tableau(n, cat):
+    requests.get(API_URL + "/{}/updatetableau".format(cat))
+    return "Updated"
 
 
 def reset_graph(cat, reset_team=False):

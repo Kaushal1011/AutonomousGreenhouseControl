@@ -4,7 +4,7 @@ Reinforcement Learning Approach Tried On AGC 2.0 Data
 
 # What is AGC RL ?
 
-Find our pitch presentation in [Presentation](./AOBD_%20AutonomousGreenhouseControl%20.pdf)
+Find our pitch presentation in [Presentation](./AOBD_AutonomousGreenhouseControl.pdf)
 
 The stated definition of our Project is the tryst of Agriculture with Reinforcement Learning. For this, the selected dataset is Autonomous Greenhouse Challenge. The purpose of using this dataset is to create an RL environment that indeed focuses on how a plantation knowledge of tomato crops can be encoded into an AI algorithm and based on that, automate decisions just like humans. This indeed helps to understand the growing patterns of tomato crop in changing weather conditions and other contributing factors significantly affecting the same.
 
@@ -65,4 +65,4 @@ We built the following things and integrated them as a complete simulation contr
 - All of our research work can be found in [Notebooks directory](/notebooks).(Some notebooks might need changing code where paths are involved as they have been moved later after running)
 - Our FastAPI backend can be found in [API](./AGC_API)
 - Dashboard is based on Dash code in [Dash](./dashFe/app.py)
-- [Presentation](./AOBD_%20AutonomousGreenhouseControl%20.pdf)
+- [Presentation](./AOBD_AutonomousGreenhouseControl.pdf)

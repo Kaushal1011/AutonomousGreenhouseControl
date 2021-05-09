@@ -6,6 +6,8 @@ Reinforcement Learning Approach Tried On AGC 2.0 Data
 
 Find our pitch presentation in [Presentation](./AOBD_AutonomousGreenhouseControl.pdf)
 
+Find our description doc in [Presentation](./AGCDescriptionDoc.pdf)
+
 The stated definition of our Project is the tryst of Agriculture with Reinforcement Learning. For this, the selected dataset is Autonomous Greenhouse Challenge. The purpose of using this dataset is to create an RL environment that indeed focuses on how a plantation knowledge of tomato crops can be encoded into an AI algorithm and based on that, automate decisions just like humans. This indeed helps to understand the growing patterns of tomato crop in changing weather conditions and other contributing factors significantly affecting the same.
 
 ## Contributors
